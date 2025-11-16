@@ -1,0 +1,16 @@
+apiVersion: v2
+name: whisperx-api
+description: WhisperX API with transcription, alignment, and diarization optimized for H200 GPUs
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - whisperx
+  - speech-to-text
+  - ai
+  - gpu
+  - h200
+maintainers:
+  - name: WhisperX Team
+home: https://github.com/abd-km/whisperx-docker
+

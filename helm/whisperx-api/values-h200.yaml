@@ -1,0 +1,103 @@
+# H200-optimized values for whisperx-api
+# Use with: helm install -f values.yaml -f values-h200.yaml
+
+## Scale up for production
+replicaCount: 2
+
+## WhisperX H200 optimization
+whisperx:
+  model:
+    name: "large-v3"
+    computeType: "float16"  # Optimal for H200
+    batchSize: 64          # Leverage 141GB HBM3 memory
+
+## GPU configuration for H200
+gpu:
+  enabled: true
+  vendor: nvidia
+  count: 1
+  memory: "141Gi"
+  nodeSelector:
+    enabled: true
+    # Target H200 nodes specifically
+    nvidia.com/gpu.product: "NVIDIA-H200-Tensor-Core-GPU"
+
+## H200-optimized resources
+resources:
+  requests:
+    cpu: "16"
+    memory: "64Gi"
+    nvidia.com/gpu: 1
+  limits:
+    cpu: "32"
+    memory: "128Gi"
+    nvidia.com/gpu: 1
+
+## Persistent storage - use fast NVMe for H200
+persistence:
+  enabled: true
+  storageClass: "fast-ssd"  # Replace with your fast storage class
+  accessMode: ReadWriteMany  # Share cache across pods
+  size: 100Gi               # Larger cache for production
+
+## Service configuration for production
+service:
+  type: LoadBalancer
+  port: 8000
+  annotations:
+    # Add cloud provider annotations if needed
+    # service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+
+## Ingress for external access
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+  hosts:
+    - host: whisperx.yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: whisperx-tls
+      hosts:
+        - whisperx.yourdomain.com
+
+## Node affinity for H200 nodes
+nodeSelector:
+  nvidia.com/gpu.product: "NVIDIA-H200-Tensor-Core-GPU"
+  # Optional: thermal zone for proper cooling
+  # thermal-zone: "optimized"
+
+## Tolerations for GPU nodes
+tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Exists"
+    effect: "NoSchedule"
+
+## Anti-affinity to spread pods across nodes
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - whisperx-api
+          topologyKey: kubernetes.io/hostname
+
+## High priority for production workloads
+priorityClassName: "high-priority"
+
+## Pod disruption budget for high availability
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+

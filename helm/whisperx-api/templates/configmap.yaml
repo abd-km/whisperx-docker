@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "whisperx-api.fullname" . }}
+  labels:
+    {{- include "whisperx-api.labels" . | nindent 4 }}
+data:
+  model-name: {{ .Values.whisperx.model.name | quote }}
+  compute-type: {{ .Values.whisperx.model.computeType | quote }}
+  batch-size: {{ .Values.whisperx.model.batchSize | quote }}
+

@@ -1,0 +1,153 @@
+# Default values for whisperx-api
+# This is a YAML-formatted file for general deployment
+
+## Replica count
+replicaCount: 1
+
+## Container image
+image:
+  repository: whisperx-api
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+## Image pull secrets (if using private registry)
+imagePullSecrets: []
+
+## Service account
+serviceAccount:
+  create: true
+  name: ""
+
+## Pod annotations
+podAnnotations: {}
+
+## Pod security context
+podSecurityContext:
+  fsGroup: 1000
+
+## Container security context
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: false
+  runAsUser: 0
+
+## WhisperX configuration
+whisperx:
+  # Model configuration
+  model:
+    name: "large-v3"
+    computeType: "float16"
+    batchSize: 16
+  
+  # Hugging Face token (required for diarization)
+  # Set via: --set whisperx.hfToken=<your-token>
+  # Or use existing secret: --set whisperx.existingSecret=<secret-name>
+  hfToken: ""
+  existingSecret: ""
+  
+  # Features
+  features:
+    transcription: true
+    alignment: true
+    diarization: true
+
+## GPU configuration
+gpu:
+  enabled: true
+  vendor: nvidia
+  # Number of GPUs per pod
+  count: 1
+  # GPU memory (H200 has 141GB)
+  memory: "141Gi"
+  # Node selector for specific GPU type
+  nodeSelector:
+    enabled: false
+    # Uncomment for H200-specific nodes
+    # nvidia.com/gpu.product: "NVIDIA-H200-Tensor-Core-GPU"
+
+## Resource requests and limits
+resources:
+  requests:
+    cpu: "4"
+    memory: "16Gi"
+    nvidia.com/gpu: 1
+  limits:
+    cpu: "8"
+    memory: "32Gi"
+    nvidia.com/gpu: 1
+
+## Persistent storage for model cache
+persistence:
+  enabled: true
+  # Storage class (use fast SSD for H200)
+  storageClass: ""
+  # Access mode
+  accessMode: ReadWriteOnce
+  # Size of persistent volume
+  size: 50Gi
+  # Existing PVC name (if reusing)
+  existingClaim: ""
+
+## Service configuration
+service:
+  type: ClusterIP
+  port: 8000
+  targetPort: 8000
+  annotations: {}
+
+## Ingress configuration
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations: {}
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: whisperx.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: whisperx-tls
+  #    hosts:
+  #      - whisperx.local
+
+## Liveness probe
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 10
+  failureThreshold: 3
+
+## Readiness probe
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+## Node selector
+nodeSelector: {}
+
+## Tolerations
+tolerations: []
+
+## Affinity rules
+affinity: {}
+
+## Priority class
+priorityClassName: ""
+
+## Pod disruption budget
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
