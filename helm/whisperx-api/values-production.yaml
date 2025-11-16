@@ -1,5 +1,4 @@
 # Production values for whisperx-api on H200 GPUs
-# Works with both nginx and traefik ingress controllers
 # Usage: helm install whisperx ./whisperx-api -f values-production.yaml
 
 ## Replicas for high availability
@@ -9,18 +8,15 @@ replicaCount: 2
 whisperx:
   model:
     name: "large-v3"
-    computeType: "float16"  # Optimal for H200
-    batchSize: 64          # Leverage 141GB HBM3 memory
+    computeType: "float16"
+    batchSize: 64  # Leverage 141GB HBM3 memory
 
 ## GPU configuration for H200
 gpu:
   enabled: true
-  vendor: nvidia
   count: 1
-  memory: "141Gi"
   nodeSelector:
     enabled: true
-    # Target H200 nodes specifically
     nvidia.com/gpu.product: "NVIDIA-H200-Tensor-Core-GPU"
 
 ## H200-optimized resources
@@ -34,14 +30,14 @@ resources:
     memory: "128Gi"
     nvidia.com/gpu: 1
 
-## Persistent storage - use fast NVMe for H200
+## Persistent storage - use fast NVMe
 persistence:
   enabled: true
-  storageClass: "fast-ssd"  # Replace with your fast storage class
-  accessMode: ReadWriteMany  # Share cache across pods
-  size: 100Gi               # Larger cache for production
+  storageClass: "fast-ssd"
+  accessMode: ReadWriteMany
+  size: 100Gi
 
-## Service configuration
+## Service
 service:
   type: ClusterIP
   port: 8000
@@ -55,10 +51,8 @@ ingress:
     # For nginx:
     nginx.ingress.kubernetes.io/proxy-body-size: "100m"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
     # For traefik (uncomment if using):
     # traefik.ingress.kubernetes.io/router.tls: "true"
-    # traefik.ingress.kubernetes.io/router.middlewares: "ai-services-whisperx-api-timeout@kubernetescrd"
   hosts:
     - host: whisperx.yourdomain.com
       paths:
@@ -69,11 +63,9 @@ ingress:
       hosts:
         - whisperx.yourdomain.com
 
-## Node affinity for H200 nodes
+## Node selector for H200
 nodeSelector:
   nvidia.com/gpu.product: "NVIDIA-H200-Tensor-Core-GPU"
-  # Optional: thermal zone for proper cooling
-  # thermal-zone: "optimized"
 
 ## Tolerations for GPU nodes
 tolerations:
@@ -94,12 +86,3 @@ affinity:
                 values:
                   - whisperx-api
           topologyKey: kubernetes.io/hostname
-
-## High priority for production workloads
-priorityClassName: "high-priority"
-
-## Pod disruption budget for high availability
-podDisruptionBudget:
-  enabled: true
-  minAvailable: 1
-
