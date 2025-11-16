@@ -1,0 +1,66 @@
+{{- if and .Values.ingress.enabled (eq .Values.ingress.className "traefik") }}
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ include "whisperx-api.fullname" . }}-timeout
+  labels:
+    {{- include "whisperx-api.labels" . | nindent 4 }}
+spec:
+  # Increase timeouts for large audio file processing
+  forwardAuth:
+    address: ""
+  buffering:
+    maxRequestBodyBytes: 104857600  # 100MB
+    memRequestBodyBytes: 104857600
+    maxResponseBodyBytes: 104857600
+    memResponseBodyBytes: 104857600
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ include "whisperx-api.fullname" . }}-headers
+  labels:
+    {{- include "whisperx-api.labels" . | nindent 4 }}
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: "https"
+    customResponseHeaders:
+      X-Frame-Options: "SAMEORIGIN"
+      X-Content-Type-Options: "nosniff"
+      X-XSS-Protection: "1; mode=block"
+    accessControlAllowMethods:
+      - GET
+      - POST
+      - OPTIONS
+    accessControlAllowOriginList:
+      - "*"
+    accessControlMaxAge: 100
+    addVaryHeader: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ include "whisperx-api.fullname" . }}-ratelimit
+  labels:
+    {{- include "whisperx-api.labels" . | nindent 4 }}
+spec:
+  rateLimit:
+    average: 10        # 10 requests
+    period: 1m         # per minute
+    burst: 5           # allow burst of 5
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ include "whisperx-api.fullname" . }}-stripprefix
+  labels:
+    {{- include "whisperx-api.labels" . | nindent 4 }}
+spec:
+  stripPrefix:
+    prefixes:
+      - /whisperx
+    forceSlash: false
+{{- end }}
+

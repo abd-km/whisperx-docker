@@ -101,9 +101,16 @@ service:
 ## Ingress configuration
 ingress:
   enabled: false
-  className: "nginx"
+  className: "nginx"  # Options: nginx, traefik
+  # Use IngressRoute CRD for Traefik (instead of standard Ingress)
+  useIngressRoute: false
+  # Enable rate limiting (Traefik only)
+  rateLimit: false
   annotations: {}
     # cert-manager.io/cluster-issuer: letsencrypt-prod
+    # For Traefik:
+    # traefik.ingress.kubernetes.io/router.tls: "true"
+    # traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
   hosts:
     - host: whisperx.local
       paths:

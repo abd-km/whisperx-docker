@@ -1,0 +1,33 @@
+{{- if and .Values.ingress.enabled (eq .Values.ingress.className "traefik") }}
+{{- if .Values.ingress.useIngressRoute }}
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ include "whisperx-api.fullname" . }}
+  labels:
+    {{- include "whisperx-api.labels" . | nindent 4 }}
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    {{- range .Values.ingress.hosts }}
+    - match: Host(`{{ .host }}`) && PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: {{ include "whisperx-api.fullname" $ }}
+          port: {{ $.Values.service.port }}
+      middlewares:
+        - name: {{ include "whisperx-api.fullname" $ }}-timeout
+        - name: {{ include "whisperx-api.fullname" $ }}-headers
+        {{- if $.Values.ingress.rateLimit }}
+        - name: {{ include "whisperx-api.fullname" $ }}-ratelimit
+        {{- end }}
+    {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    secretName: {{ (first .Values.ingress.tls).secretName }}
+  {{- end }}
+{{- end }}
+{{- end }}
+
