@@ -43,12 +43,11 @@ helm install whisperx-api ./helm/whisperx-api \
   --create-namespace
 ```
 
-### 3. Install with H200 Optimization
+### 3. Install for Production (H200 GPU)
 
 ```bash
 helm install whisperx-api ./helm/whisperx-api \
-  -f ./helm/whisperx-api/values.yaml \
-  -f ./helm/whisperx-api/values-h200.yaml \
+  -f ./helm/whisperx-api/values-production.yaml \
   --set image.repository=your-registry/whisperx-api \
   --set whisperx.hfToken=hf_your_token_here \
   --namespace ai-services \
@@ -99,15 +98,27 @@ helm install whisperx-dev ./helm/whisperx-api \
   --set resources.requests.memory=8Gi
 ```
 
-### Production with H200
+### Production (H200 GPU)
 
 ```bash
 helm install whisperx-prod ./helm/whisperx-api \
-  -f values-h200.yaml \
+  -f values-production.yaml \
   --set image.repository=my-registry/whisperx-api:v1.0.0 \
   --set whisperx.hfToken=hf_token \
   --set ingress.hosts[0].host=whisperx.company.com \
   --set persistence.storageClass=nvme-ssd \
+  --namespace production
+```
+
+### With Traefik Ingress
+
+```bash
+helm install whisperx-prod ./helm/whisperx-api \
+  -f values-production.yaml \
+  --set image.repository=my-registry/whisperx-api:v1.0.0 \
+  --set whisperx.hfToken=hf_token \
+  --set ingress.className=traefik \
+  --set ingress.hosts[0].host=whisperx.company.com \
   --namespace production
 ```
 

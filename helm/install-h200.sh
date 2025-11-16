@@ -108,9 +108,11 @@ HELM_CMD="$HELM_CMD --set image.repository=$IMAGE_REPO"
 HELM_CMD="$HELM_CMD --set image.tag=$IMAGE_TAG"
 HELM_CMD="$HELM_CMD --set whisperx.hfToken=$HF_TOKEN"
 
-# Add H200 values if available
+# Add production values for H200
 if [ "$USE_H200_VALUES" = true ]; then
-    HELM_CMD="$HELM_CMD -f ./whisperx-api/values.yaml -f ./whisperx-api/values-h200.yaml"
+    HELM_CMD="$HELM_CMD -f ./whisperx-api/values-production.yaml"
+else
+    HELM_CMD="$HELM_CMD -f ./whisperx-api/values.yaml"
 fi
 
 # Install

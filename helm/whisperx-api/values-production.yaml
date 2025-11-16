@@ -1,7 +1,8 @@
-# H200-optimized values for whisperx-api
-# Use with: helm install -f values.yaml -f values-h200.yaml
+# Production values for whisperx-api on H200 GPUs
+# Works with both nginx and traefik ingress controllers
+# Usage: helm install whisperx ./whisperx-api -f values-production.yaml
 
-## Scale up for production
+## Replicas for high availability
 replicaCount: 2
 
 ## WhisperX H200 optimization
@@ -40,23 +41,24 @@ persistence:
   accessMode: ReadWriteMany  # Share cache across pods
   size: 100Gi               # Larger cache for production
 
-## Service configuration for production
+## Service configuration
 service:
-  type: LoadBalancer
+  type: ClusterIP
   port: 8000
-  annotations:
-    # Add cloud provider annotations if needed
-    # service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
 
-## Ingress for external access
+## Ingress (works with nginx or traefik)
 ingress:
   enabled: true
-  className: "nginx"
+  className: "nginx"  # Change to "traefik" if using Traefik
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # For nginx:
     nginx.ingress.kubernetes.io/proxy-body-size: "100m"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    # For traefik (uncomment if using):
+    # traefik.ingress.kubernetes.io/router.tls: "true"
+    # traefik.ingress.kubernetes.io/router.middlewares: "ai-services-whisperx-api-timeout@kubernetescrd"
   hosts:
     - host: whisperx.yourdomain.com
       paths:
