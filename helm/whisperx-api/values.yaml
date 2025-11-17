@@ -5,13 +5,13 @@ replicaCount: 1
 
 ## Container image
 image:
-  repository: europe-west1-docker.pkg.dev/ajgc-ai-app-dev-01/ajnai/whisperx
+  repository: abdkm1/whisperx
   pullPolicy: Always
-  tag: 0.1
+  tag: latest
 
 ## Image pull secrets (if using private registry)
-imagePullSecrets: 
-  - name: gcr-docker-secret
+# For public Docker Hub repos, no secrets needed
+imagePullSecrets: []
 
 ## WhisperX configuration
 whisperx:

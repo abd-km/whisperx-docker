@@ -6,6 +6,7 @@ python-multipart>=0.0.9
 # WhisperX (auto-installs most dependencies)
 # Includes: torch, torchaudio, faster-whisper, pyannote.audio, transformers, etc.
 whisperx>=3.7.4
+faster-whisper
 
 # NLTK for text tokenization (required by whisperx alignment)
 nltk>=3.8.1
