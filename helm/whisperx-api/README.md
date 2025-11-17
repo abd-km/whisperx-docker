@@ -1,15 +1,15 @@
 # WhisperX API Helm Chart
 
-Production-ready Helm chart for deploying WhisperX API with H200 GPU optimization.
+Minimal, production-ready Helm chart for deploying WhisperX API on H200 GPUs.
 
 ## Features
 
 - 🎯 **GPU Support**: Optimized for NVIDIA H200 (141GB HBM3)
-- 🚀 **Auto-scaling**: Support for HPA and pod disruption budgets
-- 💾 **Persistent Cache**: Model caching for faster startup
-- 🔒 **Security**: Secret management for HF tokens
-- 📊 **High Availability**: Anti-affinity and replica management
-- ⚙️ **Configurable**: Extensive values for customization
+- 💾 **Model Caching**: Persistent storage for fast startup
+- 🔒 **Secret Management**: Secure HF token handling
+- 📊 **High Availability**: Multi-replica with anti-affinity
+- 🌐 **Ingress Ready**: Works with nginx or traefik
+- ⚡ **Minimal**: Only essential components, no bloat
 
 ---
 

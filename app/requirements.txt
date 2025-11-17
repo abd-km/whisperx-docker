@@ -1,19 +1,12 @@
+# FastAPI and server
 fastapi==0.109.0
 uvicorn[standard]==0.27.0
 python-multipart==0.0.6
-pydantic==2.5.3
 
-# WhisperX and dependencies
+# WhisperX (auto-installs most dependencies)
+# Includes: torch, torchaudio, faster-whisper, pyannote.audio, transformers, etc.
 whisperx==3.1.1
-torch==2.1.2
-torchaudio==2.1.2
 
-# For alignment and diarization
-pyannote.audio==3.1.1
-faster-whisper==0.10.0
-transformers==4.36.2
-
-# Additional dependencies
-numpy==1.24.3
-pandas==2.0.3
-
+# Additional utilities
+numpy>=1.24.3
+pandas>=2.0.3
