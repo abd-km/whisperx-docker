@@ -50,48 +50,13 @@ spec:
             configMapKeyRef:
               name: {{ include "whisperx-api.fullname" . }}
               key: compute-type
-        {{- if .Values.gpu.enabled }}
-        - name: CUDA_VISIBLE_DEVICES
-          value: "0"
-        - name: NVIDIA_VISIBLE_DEVICES
-          value: "all"
-        - name: NVIDIA_DRIVER_CAPABILITIES
-          value: "compute,utility"
-        {{- end }}
         livenessProbe:
           {{- toYaml .Values.livenessProbe | nindent 12 }}
         readinessProbe:
           {{- toYaml .Values.readinessProbe | nindent 12 }}
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
-        volumeMounts:
-        {{- if .Values.persistence.enabled }}
-        - name: model-cache
-          mountPath: /root/.cache
-        {{- end }}
-      volumes:
-      {{- if .Values.persistence.enabled }}
-      - name: model-cache
-        persistentVolumeClaim:
-          claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{ else }}{{ include "whisperx-api.fullname" . }}{{ end }}
-      {{- end }}
-      {{- with .Values.nodeSelector }}
       nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- if .Values.gpu.nodeSelector.enabled }}
-      nodeSelector:
-        {{- range $key, $value := .Values.gpu.nodeSelector }}
-        {{- if ne $key "enabled" }}
-        {{ $key }}: {{ $value | quote }}
-        {{- end }}
-        {{- end }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
       tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- toYaml .Values.tolerations | nindent 8 }}

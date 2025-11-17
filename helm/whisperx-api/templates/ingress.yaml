@@ -1,42 +1,42 @@
 {{- if .Values.ingress.enabled -}}
+{{- $hostname := .Values.ingress.host -}}
+{{- $name := (index (splitList "." $hostname) 0) -}}
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "whisperx-api.fullname" . }}
+  name: {{ $name }}-ingress
   labels:
-    {{- include "whisperx-api.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+    app: {{ $name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
   annotations:
+    {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- end }}
 spec:
-  {{- if .Values.ingress.className }}
-  ingressClassName: {{ .Values.ingress.className }}
-  {{- end }}
+  ingressClassName: {{ .Values.ingress.class }}
   {{- if .Values.ingress.tls }}
   tls:
-    {{- range .Values.ingress.tls }}
-    - hosts:
-        {{- range .hosts }}
-        - {{ . | quote }}
-        {{- end }}
-      secretName: {{ .secretName }}
+  - hosts:
+    - {{ $hostname }}
+    {{- if .Values.ingress.existingSecret }}
+    secretName: {{ .Values.ingress.existingSecret }}
+    {{- else if .Values.certificate.enabled }}
+    secretName: {{ $name }}-tls
     {{- end }}
   {{- end }}
   rules:
-    {{- range .Values.ingress.hosts }}
-    - host: {{ .host | quote }}
-      http:
-        paths:
-          {{- range .paths }}
-          - path: {{ .path }}
-            pathType: {{ .pathType }}
-            backend:
-              service:
-                name: {{ include "whisperx-api.fullname" $ }}
-                port:
-                  number: {{ $.Values.service.port }}
-          {{- end }}
-    {{- end }}
+  - host: {{ $hostname }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $name }}-service
+            port:
+              number: {{ .Values.service.port | default 9000 }}
 {{- end }}
 

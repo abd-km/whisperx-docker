@@ -1,9 +1,14 @@
+{{- $hostname := .Values.ingress.host -}}
+{{- $name := (index (splitList "." $hostname) 0) -}}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "whisperx-api.fullname" . }}
+  name: {{ $name }}-service
   labels:
-    {{- include "whisperx-api.labels" . | nindent 4 }}
+    app: {{ $name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
   {{- with .Values.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}

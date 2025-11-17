@@ -5,12 +5,13 @@ replicaCount: 1
 
 ## Container image
 image:
-  repository: whisperx-api
-  pullPolicy: IfNotPresent
-  tag: "latest"
+  repository: europe-west1-docker.pkg.dev/ajgc-ai-app-dev-01/ajnai/whisperx
+  pullPolicy: Always
+  tag: 0.1
 
 ## Image pull secrets (if using private registry)
-imagePullSecrets: []
+imagePullSecrets: 
+  - name: gcr-docker-secret
 
 ## WhisperX configuration
 whisperx:
@@ -24,33 +25,18 @@ whisperx:
   # Or use existing secret
   existingSecret: ""
 
-## GPU configuration
-gpu:
-  enabled: true
-  count: 1
-  # Node selector for specific GPU type (optional)
-  nodeSelector:
-    enabled: false
-    # nvidia.com/gpu.product: "NVIDIA-H200-Tensor-Core-GPU"
 
 ## Resource requests and limits
 resources:
   requests:
     cpu: "4"
     memory: "16Gi"
-    nvidia.com/gpu: 1
+    nvidia.com/mig-1g.18gb: 1
   limits:
     cpu: "8"
     memory: "32Gi"
-    nvidia.com/gpu: 1
+    nvidia.com/mig-1g.18gb: 1
 
-## Persistent storage for model cache
-persistence:
-  enabled: true
-  storageClass: ""
-  accessMode: ReadWriteOnce
-  size: 50Gi
-  existingClaim: ""
 
 ## Service
 service:
@@ -59,15 +45,19 @@ service:
 
 ## Ingress
 ingress:
-  enabled: false
-  className: "nginx"
-  annotations: {}
-  hosts:
-    - host: whisperx.local
-      paths:
-        - path: /
-          pathType: Prefix
-  tls: []
+  enabled: true
+  class: kommander-traefik
+  host: whisperx.nkp.ajnai.net
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  tls: true
+  existingSecret: ""
+
+## Certificate (for TLS)
+certificate:
+  enabled: false  # Set to true to auto-generate TLS secret name
+  # If using cert-manager or similar
 
 ## Health checks
 livenessProbe:
@@ -88,7 +78,11 @@ readinessProbe:
 nodeSelector: {}
 
 ## Tolerations for GPU nodes
-tolerations: []
+tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Exists"
+    effect: "NoSchedule"
+
 
 ## Affinity rules
 affinity: {}
