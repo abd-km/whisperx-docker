@@ -6,6 +6,15 @@ import torch
 import os
 import gc
 from typing import Optional
+import nltk
+
+# Download required NLTK data at startup
+print("Downloading NLTK data...")
+try:
+    nltk.download('punkt_tab', quiet=True)
+    print("NLTK data downloaded successfully!")
+except Exception as e:
+    print(f"Warning: Could not download NLTK data: {e}")
 
 app = FastAPI(
     title="WhisperX API",
@@ -99,8 +108,9 @@ async def transcribe(
         
         # 1. Transcribe with WhisperX
         print("Step 1: Transcribing audio...")
+        audio = whisperx.load_audio(audio_path)
         result = model.transcribe(
-            audio_path,
+            audio,
             batch_size=BATCH_SIZE,
             language=language
         )
@@ -108,9 +118,14 @@ async def transcribe(
         detected_language = result.get("language", "unknown")
         print(f"Detected language: {detected_language}")
         
+        # Construct full text from segments if not present
+        full_text = result.get("text", "")
+        if not full_text and "segments" in result:
+            full_text = " ".join([seg.get("text", "").strip() for seg in result["segments"]])
+        
         # Prepare response
         response_data = {
-            "text": result["text"],
+            "text": full_text,
             "segments": result.get("segments", []),
             "language": detected_language
         }
@@ -127,7 +142,7 @@ async def transcribe(
                     result["segments"],
                     model_a,
                     metadata,
-                    audio_path,
+                    audio,
                     DEVICE,
                     return_char_alignments=False
                 )
@@ -154,7 +169,7 @@ async def transcribe(
                     device=DEVICE
                 )
                 
-                diarize_segments = diarize_model(audio_path)
+                diarize_segments = diarize_model(audio)
                 
                 # Assign speakers to segments
                 result_diarized = whisperx.assign_word_speakers(
