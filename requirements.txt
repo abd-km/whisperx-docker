@@ -1,26 +1,15 @@
-# Core ML dependencies
-numpy==2.2.2
-torch==2.6.0
-torchaudio==2.6.0
-torchvision==0.21.0
-transformers==4.56.2
+# FastAPI and server
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.9
 
-# WhisperX and audio processing
-whisperx==3.4.2
-pyannote.audio==3.1.1
-faster-whisper==0.10.0
+# WhisperX (auto-installs most dependencies)
+# Includes: torch, torchaudio, faster-whisper, pyannote.audio, transformers, etc.
+whisperx>=3.7.4
 
-# Video/Image processing
-opencv-python==4.12.0.88
-moviepy==2.2.1
-Pillow==10.4.0
+# NLTK for text tokenization (required by whisperx alignment)
+nltk>=3.8.1
 
-# API and utilities
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-python-multipart==0.0.6
-pydantic==2.5.3
-requests==2.32.3
-python-dotenv==1.0.1
-PyYAML==6.0.2
-pandas==2.0.3
+# Additional utilities
+numpy>=1.24.3
+pandas>=2.0.3
