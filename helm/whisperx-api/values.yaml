@@ -7,7 +7,7 @@ replicaCount: 1
 image:
   repository: abdkm1/whisperx
   pullPolicy: Always
-  tag: 0.2
+  tag: 0.3
 
 ## Image pull secrets (if using private registry)
 # For public Docker Hub repos, no secrets needed
