@@ -9,6 +9,7 @@ init() {
     VERSION="$(git rev-parse --short HEAD)"
     PRODUCT_VERSION="$(cat ./VERSION)"
     PRODUCT_NAME="whisperx"
+    DOCKER_REPO="abdkm1"
 }
 
 
@@ -22,26 +23,19 @@ build() {
 
 tag() {
     echo "Tagging Docker image..."
-    docker tag whisperx:latest  europe-west1-docker.pkg.dev/ajgc-ai-app-dev-01/ajnai/whisperx:$1
+    docker tag whisperx:latest $DOCKER_REPO/$PRODUCT_NAME:$1
     echo "Docker image tagged successfully!"
 }
 
 push() {
     echo "Pushing Docker image..."
-    docker push europe-west1-docker.pkg.dev/ajgc-ai-app-dev-01/ajnai/whisperx:$1
+    docker push $DOCKER_REPO/$PRODUCT_NAME:$1
     echo "Docker image pushed successfully!"
 }
 
 deploy() {
     echo "Deploying Docker image..."
-    helm upgrade --install whisperx ./helm --namespace whisperx --create-namespace --wait --timeout 10m --set image.tag=$PRODUCT_VERSION
-}
-
-deploy-test() {
-    echo "Deploying Docker image..."
-    helm upgrade --install whisperx-test ./helm --namespace whisperx --create-namespace --wait --timeout 10m \
-    --set image.tag=$VERSION \
-    --values helm/values-test.yaml
+    helm upgrade --install whisperx ./helm/whisperx-api --namespace whisperx --create-namespace --wait --timeout 10m --set image.tag=$PRODUCT_VERSION
 }
 
 publish() {
