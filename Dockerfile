@@ -1,5 +1,5 @@
-# Use NVIDIA CUDA base image for GPU support
-FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04
+# Use NVIDIA CUDA base image for GPU support (CUDA 12.8 per WhisperX 3.7.4)
+FROM nvidia/cuda:12.8.0-cudnn-devel-ubuntu24.04
 
 # Prevent interactive prompts during build
 ENV DEBIAN_FRONTEND=noninteractive

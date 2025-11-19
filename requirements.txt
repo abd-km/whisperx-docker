@@ -1,16 +1,28 @@
-# FastAPI and server
+############################################################
+# API / SERVICE DEPENDENCIES
+############################################################
 fastapi>=0.115.0
 uvicorn[standard]>=0.30.0
 python-multipart>=0.0.9
 
-# WhisperX (auto-installs most dependencies)
-# Includes: torch, torchaudio, faster-whisper, pyannote.audio, transformers, etc.
-whisperx>=3.7.4
-faster-whisper
+############################################################
+# WHISPERX CORE (pin to upstream 3.7.4 pyproject constraints)
+############################################################
+# PyTorch stack (CUDA 12.8 wheels are pulled automatically)
+torch~=2.8.0
+torchaudio~=2.8.0
+ctranslate2>=4.5.0
+faster-whisper>=1.1.1
+transformers>=4.48.0
 
-# NLTK for text tokenization (required by whisperx alignment)
-nltk>=3.8.1
+# WhisperX runtime requirements
+whisperx==3.7.4
+pyannote-audio>=3.3.2,<4.0.0
+triton>=3.3.0; sys_platform == "linux" and platform_machine == "x86_64"
 
-# Additional utilities
-numpy>=1.24.3
-pandas>=2.0.3
+# Alignment / NLP helpers (match upstream version ranges)
+nltk>=3.9.1
+numpy>=2.0.2,<2.1.0
+pandas>=2.2.3,<2.3.0
+av<16.0.0
+onnxruntime>=1.19,<1.20.0; python_version < "3.10"
