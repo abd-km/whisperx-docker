@@ -1,4 +1,5 @@
-# Use NVIDIA CUDA base image for GPU support (CUDA 12.8 per WhisperX 3.7.4)
+# Use NVIDIA CUDA base image per WhisperX 3.7.4 pyproject.toml (CUDA 12.8 / cu128)
+# WhisperX 3.7.4 explicitly uses pytorch index: download.pytorch.org/whl/cu128
 FROM nvidia/cuda:12.8.0-cudnn-devel-ubuntu24.04
 
 # Prevent interactive prompts during build
@@ -8,7 +9,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /app
 
 # Install system dependencies (Python 3.12 is default for Ubuntu 24.04)
-# Note: libcudnn already included in base image
+# Note: cuDNN 9 is already included in the base image (12.8.0-cudnn-devel)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
@@ -18,21 +19,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-# Install cuDNN runtime/dev libraries (required by PyTorch 2.8 / WhisperX 3.7.4)
-RUN if [ ! -f /usr/share/keyrings/cuda-archive-keyring.gpg ]; then \
-        wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb && \
-        dpkg -i cuda-keyring_1.1-1_all.deb; \
-    fi \
-    && apt-get update && apt-get install -y --no-install-recommends \
-        libcudnn9 \
-        libcudnn9-dev \
-    && rm -rf /var/lib/apt/lists/* cuda-keyring_1.1-1_all.deb 2>/dev/null || true
-
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install Python dependencies (--break-system-packages is safe in Docker containers)
-RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
+# Install Python dependencies
+# Use cu128 index per WhisperX 3.7.4 pyproject.toml specification
+# --break-system-packages is safe and required in Docker with Ubuntu 24.04 (PEP 668)
+RUN pip3 install --no-cache-dir --break-system-packages \
+    --extra-index-url https://download.pytorch.org/whl/cu128 \
+    -r requirements.txt
 
 # Copy application code
 COPY app/ .

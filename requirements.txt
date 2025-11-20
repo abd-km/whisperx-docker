@@ -8,9 +8,10 @@ python-multipart>=0.0.9
 ############################################################
 # WHISPERX CORE (pin to upstream 3.7.4 pyproject constraints)
 ############################################################
-# PyTorch stack (CUDA 12.8 wheels are pulled automatically)
-torch~=2.8.0
-torchaudio~=2.8.0
+# PyTorch stack (torch 2.8.0 per WhisperX ~=2.8.0 constraint)
+# Using CUDA 12.8 (cu128) per WhisperX 3.7.4 pyproject.toml index specification
+torch==2.8.0+cu128
+torchaudio==2.8.0+cu128
 ctranslate2>=4.5.0
 faster-whisper>=1.1.1
 transformers>=4.48.0
@@ -20,9 +21,10 @@ whisperx==3.7.4
 pyannote-audio>=3.3.2,<4.0.0
 triton>=3.3.0; sys_platform == "linux" and platform_machine == "x86_64"
 
-# Alignment / NLP helpers (match upstream version ranges)
+# Alignment / NLP helpers (match WhisperX 3.7.4 pyproject.toml exactly)
 nltk>=3.9.1
-numpy>=2.0.2,<2.1.0
+numpy>=2.0.2,<2.1.0; python_version < "3.13"
+numpy>=2.1.0,<2.3.0; python_version >= "3.13"
 pandas>=2.2.3,<2.3.0
 av<16.0.0
 onnxruntime>=1.19,<1.20.0; python_version < "3.10"
