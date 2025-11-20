@@ -9,7 +9,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /app
 
 # Install system dependencies (Python 3.12 is default for Ubuntu 24.04)
-# Note: cuDNN 9 is already included in the base image (12.8.0-cudnn-devel)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
