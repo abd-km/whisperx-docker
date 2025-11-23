@@ -1,9 +1,21 @@
+# Set LD_LIBRARY_PATH to include PyTorch's bundled cuDNN libraries BEFORE importing torch/whisperx
+# Per WhisperX troubleshooting guide: PyTorch comes bundled with cuDNN libraries
+# that need to be in LD_LIBRARY_PATH for WhisperX to find them
+# This is a backup in case the Dockerfile ENV doesn't work correctly
+# IMPORTANT: This must run BEFORE importing torch/whisperx, as they load cuDNN during import
+import os
+original = os.environ.get("LD_LIBRARY_PATH", "")
+cudnn_path = "/usr/local/lib/python3.12/dist-packages/nvidia/cudnn/lib/"
+if cudnn_path not in original:
+    os.environ['LD_LIBRARY_PATH'] = original + (":" if original else "") + cudnn_path
+    print(f"Added cuDNN path to LD_LIBRARY_PATH: {cudnn_path}")
+
+# Now import libraries that depend on cuDNN
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import whisperx
 import torch
-import os
 import gc
 from typing import Optional
 import nltk
