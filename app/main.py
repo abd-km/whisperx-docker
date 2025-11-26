@@ -4,11 +4,21 @@
 # This is a backup in case the Dockerfile ENV doesn't work correctly
 # IMPORTANT: This must run BEFORE importing torch/whisperx, as they load cuDNN during import
 import os
+import site
+
 original = os.environ.get("LD_LIBRARY_PATH", "")
-cudnn_path = "/usr/local/lib/python3.12/dist-packages/nvidia/cudnn/lib/"
-if cudnn_path not in original:
-    os.environ['LD_LIBRARY_PATH'] = original + (":" if original else "") + cudnn_path
-    print(f"Added cuDNN path to LD_LIBRARY_PATH: {cudnn_path}")
+# Dynamically detect cuDNN path based on Python version
+try:
+    site_packages = site.getsitepackages()[0]
+    cudnn_path = os.path.join(site_packages, "nvidia", "cudnn", "lib")
+    if os.path.isdir(cudnn_path):
+        if cudnn_path not in original:
+            os.environ['LD_LIBRARY_PATH'] = original + (":" if original else "") + cudnn_path
+            print(f"Added cuDNN path to LD_LIBRARY_PATH: {cudnn_path}")
+    else:
+        print(f"Warning: cuDNN path not found at {cudnn_path}, using system libraries")
+except Exception as e:
+    print(f"Warning: Could not detect cuDNN path: {e}")
 
 # Now import libraries that depend on cuDNN
 from fastapi import FastAPI, UploadFile, File, HTTPException

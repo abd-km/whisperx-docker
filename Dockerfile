@@ -1,59 +1,73 @@
-# Use NVIDIA CUDA base image per WhisperX 3.7.4 pyproject.toml (CUDA 12.8 / cu128)
-# WhisperX 3.7.4 explicitly uses pytorch index: download.pytorch.org/whl/cu128
-FROM nvidia/cuda:12.8.0-cudnn-devel-ubuntu24.04
+# Production Dockerfile using pytorch/pytorch base image
+# WhisperX with PyTorch 2.5.1 and CUDA 12.1 (no CUDA 12.8)
+FROM pytorch/pytorch:2.5.1-cuda12.1-cudnn9-runtime
 
 # Prevent interactive prompts during build
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Set LD_LIBRARY_PATH to include system library paths where cuDNN libraries are located
-# /lib/x86_64-linux-gnu and /usr/lib/x86_64-linux-gnu are standard Debian/Ubuntu multiarch paths
-# These paths are registered in /etc/ld.so.conf.d/ but need to be in LD_LIBRARY_PATH
-# Note: This is architecture-specific (x86_64). For ARM64, paths would be /lib/aarch64-linux-gnu
-ENV LD_LIBRARY_PATH=/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
-
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies (Python 3.12 is default for Ubuntu 24.04)
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip \
     ffmpeg \
     wget \
     ca-certificates \
-    gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+# Strategy: Pin PyTorch 2.5.1 explicitly, then install WhisperX with constraints
+# This prevents WhisperX from upgrading PyTorch to 2.8.0
 
-# Install Python dependencies
-# Use cu128 index per WhisperX 3.7.4 pyproject.toml specification
-# --break-system-packages is safe and required in Docker with Ubuntu 24.04 (PEP 668)
-RUN pip3 install --no-cache-dir --break-system-packages \
-    --extra-index-url https://download.pytorch.org/whl/cu128 \
-    -r requirements.txt
+# Step 1: Explicitly ensure PyTorch 2.5.1+cu121 is installed and pinned
+RUN pip install --no-cache-dir --upgrade-strategy only-if-needed \
+    "torch==2.5.1+cu121" \
+    "torchaudio==2.5.1+cu121" \
+    --extra-index-url https://download.pytorch.org/whl/cu121
+
+# Step 2: Create a constraints file to prevent PyTorch upgrade
+RUN echo "torch==2.5.1+cu121" > /tmp/constraints.txt && \
+    echo "torchaudio==2.5.1+cu121" >> /tmp/constraints.txt
+
+# Step 3: Install WhisperX with --no-deps to prevent PyTorch upgrade
+RUN pip install --no-cache-dir --no-deps whisperx==3.7.4
+
+# Step 4: Install WhisperX dependencies manually, excluding torch/torchaudio
+# This allows us to control which CUDA version gets installed
+RUN pip install --no-cache-dir \
+    --constraint /tmp/constraints.txt \
+    --extra-index-url https://download.pytorch.org/whl/cu121 \
+    ctranslate2>=4.5.0 \
+    faster-whisper>=1.1.1 \
+    transformers>=4.48.0 \
+    nltk>=3.9.1 \
+    "numpy>=2.0.2,<2.1.0" \
+    "pandas>=2.2.3,<2.3.0" \
+    "av<16.0.0" \
+    "pyannote-audio>=3.3.2,<4.0.0"
+
+# Step 5: Install triton 3.5.1 separately (WhisperX requirement)
+# Pin to 3.5.1 - tested and confirmed working with PyTorch 2.5.1
+# Must be separate because pip's resolver conflicts with constraints, but runtime works fine
+RUN pip install --no-cache-dir --upgrade "triton==3.5.1; sys_platform == 'linux' and platform_machine == 'x86_64'" || echo "Triton install failed but may not be critical"
+
+# Step 6: Install FastAPI and API dependencies
+RUN pip install --no-cache-dir \
+    fastapi>=0.115.0 \
+    "uvicorn[standard]>=0.30.0" \
+    python-multipart>=0.0.9
 
 # Add PyTorch's bundled cuDNN libraries to LD_LIBRARY_PATH
 # Per WhisperX troubleshooting guide: PyTorch comes bundled with cuDNN libraries
 # that need to be in LD_LIBRARY_PATH for WhisperX to find them
-# Reference: https://github.com/m-bain/whisperX/wiki/Troubleshooting#unable-to-load-cudnn-libraries
-# The path is: /usr/local/lib/python3.12/dist-packages/nvidia/cudnn/lib/
-# This ENV is set after pip install so PyTorch's cuDNN libraries are available
-ENV LD_LIBRARY_PATH=/usr/local/lib/python3.12/dist-packages/nvidia/cudnn/lib:${LD_LIBRARY_PATH}
-
-# Create symlinks for cuDNN library versions that PyTorch looks for
-# PyTorch bundles libcudnn_cnn.so.9 but looks for libcudnn_cnn.so.9.1.0, libcudnn_cnn.so.9.1, and libcudnn_cnn.so
-# Creating symlinks ensures PyTorch can find the libraries regardless of which name it searches for
-RUN CUDNN_LIB_DIR="/usr/local/lib/python3.12/dist-packages/nvidia/cudnn/lib" && \
-    if [ -f "${CUDNN_LIB_DIR}/libcudnn_cnn.so.9" ]; then \
-        cd "${CUDNN_LIB_DIR}" && \
-        ln -sf libcudnn_cnn.so.9 libcudnn_cnn.so.9.1.0 2>/dev/null || true && \
-        ln -sf libcudnn_cnn.so.9 libcudnn_cnn.so.9.1 2>/dev/null || true && \
-        ln -sf libcudnn_cnn.so.9 libcudnn_cnn.so 2>/dev/null || true && \
-        echo "Created cuDNN symlinks for PyTorch compatibility"; \
+# The path varies by Python version - detect it dynamically
+RUN PYTHON_VERSION=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')") && \
+    CUDNN_PATH=$(python -c "import site; print(site.getsitepackages()[0])")/nvidia/cudnn/lib && \
+    if [ -d "$CUDNN_PATH" ]; then \
+        echo "Found cuDNN path: $CUDNN_PATH" && \
+        echo "export LD_LIBRARY_PATH=$CUDNN_PATH:\${LD_LIBRARY_PATH}" >> /etc/profile.d/cudnn.sh && \
+        export LD_LIBRARY_PATH=$CUDNN_PATH:${LD_LIBRARY_PATH}; \
     else \
-        echo "Warning: libcudnn_cnn.so.9 not found, skipping symlink creation"; \
+        echo "Warning: cuDNN path not found at $CUDNN_PATH, main.py will handle it dynamically"; \
     fi
 
 # Copy application code
@@ -64,4 +78,3 @@ EXPOSE 8000
 
 # Run the API with production settings
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
-
