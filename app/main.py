@@ -5,17 +5,18 @@
 # IMPORTANT: This must run BEFORE importing torch/whisperx, as they load cuDNN during import
 import os
 
-original = os.environ.get("LD_LIBRARY_PATH", "")
-# Confirmed path for Python 3.11 in pytorch/pytorch base image
-cudnn_path = "/opt/conda/lib/python3.11/site-packages/nvidia/cudnn/lib/"
-if os.path.isdir(cudnn_path):
-    if cudnn_path not in original:
-        os.environ['LD_LIBRARY_PATH'] = original + (":" if original else "") + cudnn_path
-        print(f"Added cuDNN path to LD_LIBRARY_PATH: {cudnn_path}")
-else:
-    print(f"Warning: cuDNN path not found at {cudnn_path}, using system libraries")
+# original = os.environ.get("LD_LIBRARY_PATH", "")
+# # Confirmed path for Python 3.11 in pytorch/pytorch base image
+# cudnn_path = "/opt/conda/lib/python3.11/site-packages/nvidia/cudnn/lib/"
+# if os.path.isdir(cudnn_path):
+#     if cudnn_path not in original:
+#         os.environ['LD_LIBRARY_PATH'] = original + (":" if original else "") + cudnn_path
+#         print(f"Added cuDNN path to LD_LIBRARY_PATH: {cudnn_path}")
+# else:
+#     print(f"Warning: cuDNN path not found at {cudnn_path}, using system libraries")
 
-# Now import libraries that depend on cuDNN
+# # Now import libraries that depend on cuDNN
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
