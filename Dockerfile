@@ -59,16 +59,8 @@ RUN pip install --no-cache-dir \
 # Add PyTorch's bundled cuDNN libraries to LD_LIBRARY_PATH
 # Per WhisperX troubleshooting guide: PyTorch comes bundled with cuDNN libraries
 # that need to be in LD_LIBRARY_PATH for WhisperX to find them
-# The path varies by Python version - detect it dynamically
-RUN PYTHON_VERSION=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')") && \
-    CUDNN_PATH=$(python -c "import site; print(site.getsitepackages()[0])")/nvidia/cudnn/lib && \
-    if [ -d "$CUDNN_PATH" ]; then \
-        echo "Found cuDNN path: $CUDNN_PATH" && \
-        echo "export LD_LIBRARY_PATH=$CUDNN_PATH:\${LD_LIBRARY_PATH}" >> /etc/profile.d/cudnn.sh && \
-        export LD_LIBRARY_PATH=$CUDNN_PATH:${LD_LIBRARY_PATH}; \
-    else \
-        echo "Warning: cuDNN path not found at $CUDNN_PATH, main.py will handle it dynamically"; \
-    fi
+# Confirmed path for Python 3.11 in pytorch/pytorch base image
+ENV LD_LIBRARY_PATH=/opt/conda/lib/python3.11/site-packages/nvidia/cudnn/lib/:${LD_LIBRARY_PATH}
 
 # Copy application code
 COPY app/ .
